@@ -1,0 +1,11 @@
+---
+title: "Example title"
+author: "Alejandro Caravaca Puchades"
+date: "DD/MM/YYYY"
+editor: visual
+output:
+    html:
+        code-fold: true
+        toc: true
+        toc_depth: 2
+---

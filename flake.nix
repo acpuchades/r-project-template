@@ -1,0 +1,38 @@
+{
+	description = "Reproducible R environment with Nix flake";
+
+	inputs = {
+		nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+		flake-utils.url = "github:numtide/flake-utils";
+	};
+
+	outputs = { self, nixpkgs, flake-utils }:
+		flake-utils.lib.eachDefaultSystem (system:
+		let
+			pkgs = import nixpkgs { inherit system; };
+			r-packages = with pkgs.rPackages; [
+				janitor
+				quarto
+				languageserver
+				tidyverse
+			];
+			r-with-packages = pkgs.rWrapper.override { packages = r-packages; };
+			rstudio-with-packages = pkgs.rstudioWrapper.override { packages = r-packages; };
+			render-cmd = pkgs.writeShellApplication {
+				name = "render";
+				runtimeInputs = [ r-with-packages ];
+				text = "${r-with-packages}/bin/Rscript -e 'quarto::quarto_render(\"analysis.qmd\")'";
+			};
+		in {
+			packages.default = with pkgs; [ nixd r-with-packages ];
+			devShells.default = pkgs.mkShell { packages = [ r-with-packages ]; };
+			apps.rstudio = {
+				type = "app";
+				program = "${rstudio-with-packages}/bin/rstudio";
+			};
+			apps.render = {
+				type = "app";
+				program = "${render-cmd}/bin/render";
+			};
+		});
+}
